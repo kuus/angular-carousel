@@ -46,10 +46,11 @@
                 if(angular.isDefined(showNextAttribute)) {
                     showNextSlideMode = true;
                     percentageNextSlideToShow = isNaN(showNextAttribute) ? 90 : 100 - showNextAttribute;
+                    // set width on slides
+                    angular.forEach(tElementSlides, function(element) {
+                        element.style.width = percentageNextSlideToShow + '%';
+                    });
                 }
-                angular.forEach(tElementSlides, function(element) {
-                    element.style.width = percentageNextSlideToShow + '%';
-                });
 
                 // add CSS classes
                 tElement.addClass('rn-carousel-slides');
