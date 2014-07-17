@@ -317,6 +317,8 @@
                     }
 
                     function documentMouseUpEvent(event) {
+                        // temporary fix: investigate...
+                        if(showNextSlideMode) return;
                         // in case we click outside the carousel, trigger a fake swipeEnd
                         swipeMoved = true;
                         swipeEnd({
