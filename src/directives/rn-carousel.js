@@ -27,10 +27,14 @@
                     isIndexBound = false,
                     repeatItem,
                     repeatCollection,
+                    showNextAttribute = tAttributes.rnShowNext,
+                    showNextSlideMode = false,
+                    percentageNextSlideToShow = 0,
                     isVertical = false,
-                    dirAttribute = tElement[0].getAttribute('rn-carousel'),
+                    dirAttribute = tElement.rnCarousel,
                     dirProperty = 'width',
-                    dirAxis = 'x';
+                    dirAxis = 'x',
+                    tElementSlides = tElement.children();
                 // change direction if attribute is set
                 if(dirAttribute === 'vertical') {
                     isVertical = true;
@@ -38,10 +42,18 @@
                     dirAxis = 'y';
                     tElement.addClass('rn-carousel-vertical');
                 }
-                console.log(isVertical, dirProperty, dirAxis)
+                // showNextSlideMode
+                if(angular.isDefined(showNextAttribute)) {
+                    showNextSlideMode = true;
+                    percentageNextSlideToShow = isNaN(showNextAttribute) ? 90 : 100 - showNextAttribute;
+                }
+                angular.forEach(tElementSlides, function(element) {
+                    element.style.width = percentageNextSlideToShow + '%';
+                });
+
                 // add CSS classes
                 tElement.addClass('rn-carousel-slides');
-                tElement.children().addClass('rn-carousel-slide');
+                tElementSlides.addClass('rn-carousel-slide');
 
                 // try to find an ngRepeat expression
                 // at this point, the attributes are not yet normalized so we need to try various syntax
@@ -76,6 +88,9 @@
                     carouselId++;
 
                     var containerSize,
+                        containerSizeStep,
+                        containerSizeToConsider,
+                        containerOffset,
                         transformProperty,
                         pressed,
                         startAxis,
@@ -178,12 +193,14 @@
 
                     function getCarouselSize() {
                         var slides = carousel.children();
-                        if (slides.length === 0) {
+                        if (slides.length === 0 || showNextSlideMode) {
                             containerSize = carousel[0].getBoundingClientRect()[dirProperty];
                         } else {
                             containerSize = slides[0].getBoundingClientRect()[dirProperty];
                         }
-                        // console.log('getCarouselSize', containerSize);
+                        containerSizeStep = (containerSize / 100) * percentageNextSlideToShow;
+                        containerOffset = containerSize - containerSizeStep;
+                        containerSizeToConsider = showNextSlideMode ? containerSizeStep : containerSize;
                         return containerSize;
                     }
 
@@ -199,12 +216,12 @@
                     function scroll(x) {
                         // use CSS 3D transform to move the carousel
                         if (isNaN(x)) {
-                            x = scope.carouselIndex * containerSize;
+                            x = scope.carouselIndex * containerSizeToConsider;
                         }
 
                         offset = x;
                         var move = -Math.round(offset);
-                        move += (scope.carouselBufferIndex * containerSize);
+                        move += (scope.carouselBufferIndex * containerSizeToConsider);
 
                         if(!is3dAvailable) {
                             if(isVertical) {
@@ -229,8 +246,13 @@
                         if (amplitude) {
                             elapsed = Date.now() - timestamp;
                             delta = amplitude * Math.exp(-elapsed / timeConstant);
+
                             if (delta > rubberTreshold || delta < -rubberTreshold) {
-                                scroll(destination - delta);
+                                if(showNextSlideMode) {
+                                    scroll((destination - getIncrementalOffset(delta)) - delta);
+                                } else {
+                                    scroll(destination - delta);
+                                }
                                 /* We are using raf.js, a requestAnimationFrame polyfill, so
                                 this will work on IE9 */
                                 requestAnimationFrame(autoScroll);
@@ -270,7 +292,7 @@
                         if (animate) {
                             // simulate a swipe so we have the standard animation
                             // used when external binding index is updated or touch canceed
-                            offset = (i * containerSize);
+                            offset = (i * containerSizeToConsider);
                             swipeEnd(null, null, true);
                             return;
                         }
@@ -354,6 +376,14 @@
                             }
                         }
                         return false;
+                    }
+
+                    function getIncrementalOffset(delta) {
+                        if(delta > 0) {
+                            return containerOffset * (scope.carouselIndex + 1);
+                        } else {
+                            return containerOffset * (scope.carouselIndex - 1);
+                        }
                     }
 
                     function swipeEnd(coords, event, forceAnimation) {
