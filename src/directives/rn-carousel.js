@@ -116,7 +116,6 @@
                         scope.$watch('indicatorIndex', function(newValue) {
                             goToSlide(newValue, true);
                         });
-
                     }
 
                     // enable carousel indicator
@@ -317,8 +316,6 @@
                     }
 
                     function documentMouseUpEvent(event) {
-                        // temporary fix: investigate...
-                        if(showNextSlideMode) return;
                         // in case we click outside the carousel, trigger a fake swipeEnd
                         swipeMoved = true;
                         swipeEnd({

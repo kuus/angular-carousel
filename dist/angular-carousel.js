@@ -1,6 +1,6 @@
 /**
  * Angular Carousel - Mobile friendly touch carousel for AngularJS
- * @version v0.2.3 - 2014-04-29
+ * @version v0.2.3 - 2014-07-19
  * @link http://revolunet.github.com/angular-carousel
  * @author Julien Bouquillon <julien@revolunet.com>
  * @license MIT License, http://www.opensource.org/licenses/MIT
@@ -86,11 +86,35 @@ angular.module('angular-carousel')
                     slidesCount = 0,
                     isIndexBound = false,
                     repeatItem,
-                    repeatCollection;
+                    repeatCollection,
+                    showNextAttribute = tAttributes.rnShowNext,
+                    showNextSlideMode = false,
+                    percentageNextSlideToShow = 0,
+                    isVertical = false,
+                    dirAttribute = tElement.rnCarousel,
+                    dirProperty = 'width',
+                    dirAxis = 'x',
+                    tElementSlides = tElement.children();
+                // change direction if attribute is set
+                if(dirAttribute === 'vertical') {
+                    isVertical = true;
+                    dirProperty = 'height';
+                    dirAxis = 'y';
+                    tElement.addClass('rn-carousel-vertical');
+                }
+                // showNextSlideMode
+                if(angular.isDefined(showNextAttribute)) {
+                    showNextSlideMode = true;
+                    percentageNextSlideToShow = isNaN(showNextAttribute) ? 90 : 100 - showNextAttribute;
+                    // set width on slides
+                    angular.forEach(tElementSlides, function(element) {
+                        element.style.width = percentageNextSlideToShow + '%';
+                    });
+                }
 
                 // add CSS classes
                 tElement.addClass('rn-carousel-slides');
-                tElement.children().addClass('rn-carousel-slide');
+                tElementSlides.addClass('rn-carousel-slide');
 
                 // try to find an ngRepeat expression
                 // at this point, the attributes are not yet normalized so we need to try various syntax
@@ -124,10 +148,13 @@ angular.module('angular-carousel')
 
                     carouselId++;
 
-                    var containerWidth,
+                    var containerSize,
+                        containerSizeStep,
+                        containerSizeToConsider,
+                        containerOffset,
                         transformProperty,
                         pressed,
-                        startX,
+                        startAxis,
                         amplitude,
                         offset = 0,
                         destination,
@@ -149,7 +176,6 @@ angular.module('angular-carousel')
                         scope.$watch('indicatorIndex', function(newValue) {
                             goToSlide(newValue, true);
                         });
-
                     }
 
                     // enable carousel indicator
@@ -209,7 +235,7 @@ angular.module('angular-carousel')
                                 slidesCount = Object.keys(newValue).length;
                             }
                             updateIndicatorArray();
-                            if (!containerWidth) updateContainerWidth();
+                            if (!containerSize) updateContainerWidth();
                             goToSlide(scope.carouselIndex);
                         });
                     } else {
@@ -225,41 +251,50 @@ angular.module('angular-carousel')
                         scope.carouselIndicatorArray = items;
                     }
 
-                    function getCarouselWidth() {
-                       // container.css('width', 'auto');
+                    function getCarouselSize() {
                         var slides = carousel.children();
-                        if (slides.length === 0) {
-                            containerWidth = carousel[0].getBoundingClientRect().width;
+                        if (slides.length === 0 || showNextSlideMode) {
+                            containerSize = carousel[0].getBoundingClientRect()[dirProperty];
                         } else {
-                            containerWidth = slides[0].getBoundingClientRect().width;
+                            containerSize = slides[0].getBoundingClientRect()[dirProperty];
                         }
-                        // console.log('getCarouselWidth', containerWidth);
-                        return containerWidth;
+                        containerSizeStep = (containerSize / 100) * percentageNextSlideToShow;
+                        containerOffset = containerSize - containerSizeStep;
+                        containerSizeToConsider = showNextSlideMode ? containerSizeStep : containerSize;
+                        return containerSize;
                     }
 
                     function updateContainerWidth() {
                         // force the carousel container width to match the first slide width
-                        container.css('width', '100%');
-                        var width = getCarouselWidth();
-                        if (width) {
-                            container.css('width', width + 'px');
+                        container.css(dirProperty, '100%');
+                        var size = getCarouselSize();
+                        if (size) {
+                            container.css(dirProperty, size + 'px');
                         }
                     }
 
                     function scroll(x) {
                         // use CSS 3D transform to move the carousel
                         if (isNaN(x)) {
-                            x = scope.carouselIndex * containerWidth;
+                            x = scope.carouselIndex * containerSizeToConsider;
                         }
 
                         offset = x;
                         var move = -Math.round(offset);
-                        move += (scope.carouselBufferIndex * containerWidth);
+                        move += (scope.carouselBufferIndex * containerSizeToConsider);
 
                         if(!is3dAvailable) {
-                            carousel[0].style[transformProperty] = 'translate(' + move + 'px, 0)';
+                            if(isVertical) {
+                                carousel[0].style[transformProperty] = 'translate(0, ' + move + 'px)';
+                            } else {
+                                carousel[0].style[transformProperty] = 'translate(' + move + 'px, 0)';
+                            }
                         } else {
-                            carousel[0].style[transformProperty] = 'translate3d(' + move + 'px, 0, 0)';
+                            if(isVertical) {
+                                carousel[0].style[transformProperty] = 'translate3d(0, ' + move + 'px, 0)';
+                            } else {
+                                carousel[0].style[transformProperty] = 'translate3d(' + move + 'px, 0, 0)';
+                            }
                         }
                     }
 
@@ -271,13 +306,18 @@ angular.module('angular-carousel')
                         if (amplitude) {
                             elapsed = Date.now() - timestamp;
                             delta = amplitude * Math.exp(-elapsed / timeConstant);
+
                             if (delta > rubberTreshold || delta < -rubberTreshold) {
-                                scroll(destination - delta);
+                                if(showNextSlideMode) {
+                                    scroll((destination - getIncrementalOffset(delta)) - delta);
+                                } else {
+                                    scroll(destination - delta);
+                                }
                                 /* We are using raf.js, a requestAnimationFrame polyfill, so
                                 this will work on IE9 */
                                 requestAnimationFrame(autoScroll);
                             } else {
-                                goToSlide(destination / containerWidth);
+                                goToSlide(destination / containerSize);
                             }
                         }
                     }
@@ -312,7 +352,7 @@ angular.module('angular-carousel')
                         if (animate) {
                             // simulate a swipe so we have the standard animation
                             // used when external binding index is updated or touch canceed
-                            offset = (i * containerWidth);
+                            offset = (i * containerSizeToConsider);
                             swipeEnd(null, null, true);
                             return;
                         }
@@ -332,7 +372,7 @@ angular.module('angular-carousel')
 
                     function getAbsMoveTreshold() {
                         // return min pixels required to move a slide
-                        return moveTreshold * containerWidth;
+                        return moveTreshold * containerSize;
                     }
 
                     function documentMouseUpEvent(event) {
@@ -350,7 +390,7 @@ angular.module('angular-carousel')
                         if (scope.carouselIndex===0) {
                             position = Math.max(-getAbsMoveTreshold(), position);
                         } else if (scope.carouselIndex===slidesCount-1) {
-                            position = Math.min(((slidesCount-1)*containerWidth + getAbsMoveTreshold()), position);
+                            position = Math.min(((slidesCount-1)*containerSize + getAbsMoveTreshold()), position);
                         }
                         return position;
                     }
@@ -365,7 +405,7 @@ angular.module('angular-carousel')
 
                         $document.bind('mouseup', documentMouseUpEvent);
                         pressed = true;
-                        startX = coords.x;
+                        startAxis = coords[dirAxis];
 
                         amplitude = 0;
                         timestamp = Date.now();
@@ -375,10 +415,10 @@ angular.module('angular-carousel')
 
                     function swipeMove(coords, event) {
                         //console.log('swipeMove', coords, event);
-                        var x, delta;
+                        var axis, delta;
                         if (pressed) {
-                            x = coords.x;
-                            delta = startX - x;
+                            axis = coords[dirAxis];
+                            delta = startAxis - axis;
                             if (delta > 2 || delta < -2) {
                                 // stop events from propagating to handle nested carousels
                                 if(event) {
@@ -386,7 +426,7 @@ angular.module('angular-carousel')
                                 }
 
                                 swipeMoved = true;
-                                startX = x;
+                                startAxis = axis;
 
                                 /* We are using raf.js, a requestAnimationFrame polyfill, so
                                 this will work on IE9 */
@@ -396,6 +436,14 @@ angular.module('angular-carousel')
                             }
                         }
                         return false;
+                    }
+
+                    function getIncrementalOffset(delta) {
+                        if(delta > 0) {
+                            return containerOffset * (scope.carouselIndex + 1);
+                        } else {
+                            return containerOffset * (scope.carouselIndex - 1);
+                        }
                     }
 
                     function swipeEnd(coords, event, forceAnimation) {
@@ -418,9 +466,9 @@ angular.module('angular-carousel')
                         destination = offset;
 
                         var minMove = getAbsMoveTreshold(),
-                            currentOffset = (scope.carouselIndex * containerWidth),
+                            currentOffset = (scope.carouselIndex * containerSize),
                             absMove = currentOffset - destination,
-                            slidesMove = -Math[absMove>=0?'ceil':'floor'](absMove / containerWidth),
+                            slidesMove = -Math[absMove>=0?'ceil':'floor'](absMove / containerSize),
                             shouldMove = Math.abs(absMove) > minMove;
 
                         if ((slidesMove + scope.carouselIndex) >= slidesCount ) {
@@ -431,7 +479,7 @@ angular.module('angular-carousel')
                         }
                         var moveOffset = shouldMove?slidesMove:0;
 
-                        destination = (moveOffset + scope.carouselIndex) * containerWidth;
+                        destination = (moveOffset + scope.carouselIndex) * containerSize;
                         amplitude = destination - offset;
                         timestamp = Date.now();
                         if (forceAnimation) {
