@@ -8,12 +8,16 @@ $rn-carousel-control-height: 30px;
     position: relative;
 }
 .rn-carousel-slides {
-    transform: translate3d(0,0,0);
-    position: relative;
-    white-space: nowrap;
-    overflow: visible;
-    padding: 0;
-    margin: 0;
+  transform: translate3d(0,0,0);
+  position: relative;
+  white-space: nowrap;
+  overflow: visible;
+  padding: 0;
+  margin: 0;
+
+  &.rn-carousel-vertical {
+    height: 100%;
+  }
 }
 
 /* IE 9 */
@@ -27,12 +31,16 @@ $rn-carousel-control-height: 30px;
 }
 
 .rn-carousel-slide {
-    white-space: normal;
-    vertical-align: top;
-    display: inline-block;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
+  white-space: normal;
+  vertical-align: top;
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+
+  .rn-carousel-vertical & {
+    display: block;
+  }
 }
 
 /* indicators */

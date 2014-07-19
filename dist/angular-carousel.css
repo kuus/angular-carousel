@@ -13,6 +13,8 @@
   overflow: visible;
   padding: 0;
   margin: 0; }
+  .rn-carousel-slides.rn-carousel-vertical {
+    height: 100%; }
 
 /* IE 9 */
 :root .rn-carousel-slides {
@@ -34,6 +36,8 @@
   -webkit-backface-visibility: hidden;
   -ms-backface-visibility: hidden;
   backface-visibility: hidden; }
+  .rn-carousel-vertical .rn-carousel-slide {
+    display: block; }
 
 /* indicators */
 .rn-carousel-indicator {
