@@ -82,9 +82,9 @@ angular.module('angular-carousel').run(['$templateCache', function($templateCach
             // in container % how much we need to drag to trigger the slide change
             moveTreshold = 0.05,
             // in absolute pixels, at which distance the slide stick to the edge on release
-            rubberTreshold = 3;
-
-        var requestAnimationFrame = $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame;
+            rubberTreshold = 3,
+            // use raf.js, a requestAnimationFrame polyfill, to make this work on IE9
+            requestAnimationFrame = $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame;
 
         return {
             restrict: 'A',
@@ -156,7 +156,7 @@ angular.module('angular-carousel').run(['$templateCache', function($templateCach
                     return true;
                 });
 
-                return function(scope, iElement, iAttributes, containerCtrl) {
+                return function(scope, iElement, iAttributes) {
 
                     carouselId++;
 
@@ -327,8 +327,6 @@ angular.module('angular-carousel').run(['$templateCache', function($templateCach
                                 } else {
                                     scroll(destination - delta);
                                 }
-                                /* We are using raf.js, a requestAnimationFrame polyfill, so
-                                this will work on IE9 */
                                 requestAnimationFrame(autoScroll);
                             } else {
                                 goToSlide(destination / containerSize);
@@ -452,9 +450,6 @@ angular.module('angular-carousel').run(['$templateCache', function($templateCach
 
                                 swipeMoved = true;
                                 startAxis = axis;
-
-                                /* We are using raf.js, a requestAnimationFrame polyfill, so
-                                this will work on IE9 */
                                 requestAnimationFrame(function() {
                                     scroll(capPosition(offset + delta));
                                 });
@@ -516,8 +511,6 @@ angular.module('angular-carousel').run(['$templateCache', function($templateCach
                         if (forceAnimation) {
                             amplitude = offset - currentOffset;
                         }
-                        /* We are using raf.js, a requestAnimationFrame polyfill, so
-                        this will work on IE9 */
                         requestAnimationFrame(autoScroll);
 
                         return false;
@@ -557,7 +550,7 @@ angular.module('angular-carousel').run(['$templateCache', function($templateCach
                         return true;
                     });
 
-                    //Detect support of translate3d
+                    // Detect support of translate3d
                     function detect3dSupport(){
                         var el = document.createElement('p'),
                         has3d,
