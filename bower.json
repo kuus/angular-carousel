@@ -17,9 +17,12 @@
   ],
   "dependencies": {
     "angular": "~1.2.10",
-    "angular-touch": "~1.2.10"
+    "angular-swipe": "https://github.com/marmorkuchen-net/angular-swipe.git"
   },
   "devDependencies": {
     "angular-mocks": "~1.2.10"
+  },
+  "resolutions": {
+    "angular": "1.2.16"
   }
 }

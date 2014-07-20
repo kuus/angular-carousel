@@ -13,7 +13,7 @@
   overflow: visible;
   padding: 0;
   margin: 0; }
-  .rn-carousel-slides.rn-carousel-vertical {
+  .rn-carousel-vertical .rn-carousel-slides {
     height: 100%; }
 
 /* IE 9 */
@@ -56,8 +56,15 @@
     color: #333; }
     .rn-carousel-indicator span:before {
       content: "\25cf"; }
+    .rn-carousel-vertical .rn-carousel-indicator span {
+      display: block; }
   .rn-carousel-indicator .active {
     color: white; }
+  .rn-carousel-vertical .rn-carousel-indicator {
+    right: 0;
+    top: -100%;
+    height: 100%;
+    width: 20px; }
 
 /* controls */
 .rn-carousel-control {

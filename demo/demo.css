@@ -124,6 +124,15 @@ h3 {
     text-shadow: 0 1px 0 #dadada;
 }
 
+#vertical-slider {
+    height: 250px;
+}
+
+#show-next-slider li {
+    background-size: 98%;
+    background-repeat: no-repeat;
+}
+
 /* override default controls */
 .rn-carousel-control {
     font-size:50px !important;

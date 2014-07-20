@@ -107,6 +107,13 @@ module.exports = function(grunt) {
         }
       }
     },
+    wiredep: {
+      target: {
+        src: [
+          '*.html'
+        ]
+      }
+    },
     karma: {
       options: {
           // needed to use absolute path for some reason
@@ -139,7 +146,7 @@ module.exports = function(grunt) {
   });
 
   // Build task.
-  grunt.registerTask('build', ['jshint', 'concat', 'uglify', 'sass', 'autoprefixer', 'cssmin']);
+  grunt.registerTask('build', ['wiredep', 'jshint', 'concat', 'uglify', 'sass', 'autoprefixer', 'cssmin']);
 
   // Default task.
   grunt.registerTask('default', ['build', 'connect', 'karma:unit', 'watch']);

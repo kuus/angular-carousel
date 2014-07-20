@@ -3,7 +3,7 @@
 
     angular.module('angular-carousel')
 
-    .directive('rnCarousel', ['$swipe', '$window', '$document', '$parse', '$compile', '$rootScope', function($swipe, $window, $document, $parse, $compile, $rootScope) {
+    .directive('rnCarousel', ['swipe', '$window', '$document', '$parse', '$compile', '$rootScope', function(swipe, $window, $document, $parse, $compile, $rootScope) {
         // internal ids to allow multiple instances
         var carouselId = 0,
             // used to compute the sliding speed
@@ -31,7 +31,8 @@
                     showNextSlideMode = false,
                     percentageNextSlideToShow = 0,
                     isVertical = false,
-                    dirAttribute = tElement.rnCarousel,
+                    verticalClass = '',
+                    dirAttribute = tAttributes.rnCarousel,
                     dirProperty = 'width',
                     dirAxis = 'x',
                     tElementSlides = tElement.children();
@@ -40,7 +41,7 @@
                     isVertical = true;
                     dirProperty = 'height';
                     dirAxis = 'y';
-                    tElement.addClass('rn-carousel-vertical');
+                    verticalClass = ' rn-carousel-vertical';
                 }
                 // showNextSlideMode
                 if(angular.isDefined(showNextAttribute)) {
@@ -100,11 +101,13 @@
                         destination,
                         slidesCount = 0,
                         swipeMoved = false,
+                        swipeCoordsEnd = { x: 0, y: 0 },
+                        swipeCoordsStart = { x: 0, y: 0 },
                         // javascript based animation easing
                         timestamp;
 
                     // add a wrapper div that will hide the overflow
-                    var carousel = iElement.wrap("<div id='carousel-" + carouselId +"' class='rn-carousel-container'></div>"),
+                    var carousel = iElement.wrap("<div id='carousel-" + carouselId +"' class='rn-carousel-container" + verticalClass +"'></div>"),
                         container = carousel.parent();
 
                     // if indicator or controls, setup the watch
@@ -315,6 +318,14 @@
                         return moveTreshold * containerSize;
                     }
 
+                    function getIncrementalOffset(delta) {
+                        if(delta > 0) {
+                            return containerOffset * (scope.carouselIndex + 1);
+                        } else {
+                            return containerOffset * (scope.carouselIndex - 1);
+                        }
+                    }
+
                     function documentMouseUpEvent(event) {
                         // in case we click outside the carousel, trigger a fake swipeEnd
                         swipeMoved = true;
@@ -336,6 +347,9 @@
                     }
 
                     function swipeStart(coords, event) {
+                        if(showNextSlideMode) {
+                            swipeCoordsStart = coords;
+                        }
                         //console.log('swipeStart', coords, event);
 
                         // stop events from propagating to handle nested carousels
@@ -378,17 +392,8 @@
                         return false;
                     }
 
-                    function getIncrementalOffset(delta) {
-                        if(delta > 0) {
-                            return containerOffset * (scope.carouselIndex + 1);
-                        } else {
-                            return containerOffset * (scope.carouselIndex - 1);
-                        }
-                    }
-
                     function swipeEnd(coords, event, forceAnimation) {
-                        //console.log('swipeEnd', 'scope.carouselIndex', scope.carouselIndex);
-
+                        var swipedDelta;
                         // Prevent clicks on buttons inside slider to trigger "swipeEnd" event on touchend/mouseup
                         if(event && !swipeMoved) {
                             return;
@@ -403,10 +408,24 @@
                         pressed = false;
                         swipeMoved = false;
 
-                        destination = offset;
+                        // check the mode
+                        if(showNextSlideMode) {
+                            swipeCoordsEnd = coords;
+                            console.log('swipeCoordsEnd', swipeCoordsEnd)
+                            // determine the diretion of the swipe
+                            if(angular.isObject(swipeCoordsStart) && angular.isObject(swipeCoordsEnd)) {
+                                swipedDelta = (swipeCoordsStart[dirAxis] > swipeCoordsEnd[dirAxis]) ? 1 : 0;
+                            } else {
+                                swipedDelta = 0;
+                            }
+                            var currentOffset = (scope.carouselIndex * containerSize) - getIncrementalOffset(swipedDelta);
+                        } else {
+                            var currentOffset = scope.carouselIndex * containerSize;
+                        }
+                        console.log('swipedDelta', swipedDelta, 'scope.carouselIndex', scope.carouselIndex, 'currentOffset', currentOffset)
 
+                        destination = offset;
                         var minMove = getAbsMoveTreshold(),
-                            currentOffset = (scope.carouselIndex * containerSize),
                             absMove = currentOffset - destination,
                             slidesMove = -Math[absMove>=0?'ceil':'floor'](absMove / containerSize),
                             shouldMove = Math.abs(absMove) > minMove;
@@ -421,6 +440,7 @@
 
                         destination = (moveOffset + scope.carouselIndex) * containerSize;
                         amplitude = destination - offset;
+                        console.log('destination', destination, 'amplitude', amplitude)
                         timestamp = Date.now();
                         if (forceAnimation) {
                             amplitude = offset - currentOffset;
@@ -435,7 +455,7 @@
                     iAttributes.$observe('rnCarouselSwipe', function(newValue, oldValue) {
                         // only bind swipe when it's not switched off
                         if(newValue !== 'false' && newValue !== 'off') {
-                            $swipe.bind(carousel, {
+                            swipe.bind(carousel, {
                                 start: swipeStart,
                                 move: swipeMove,
                                 end: swipeEnd,

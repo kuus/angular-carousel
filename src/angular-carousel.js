@@ -7,5 +7,5 @@ http://github.com/revolunet/angular-carousel
 */
 
 angular.module('angular-carousel', [
-    'ngTouch'
+    'swipe'
 ]);

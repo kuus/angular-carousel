@@ -11,7 +11,7 @@ module.exports = function ( karma ) {
      */
     files: [
         'bower_components/angular/angular.js',
-        'bower_components/angular-touch/angular-touch.js',
+        'bower_components/angular-swipe/dist/angular-touch.js',
         'bower_components/angular-mocks/angular-mocks.js',
         'dist/angular-carousel.js',
         'test/unit/*.js'
