@@ -41,6 +41,13 @@ body {
 .my-slider.nested li {
     padding: 10px;
 }
+.my-slider.nested {
+    width: 300px;
+    height: 200px;
+}
+.my-slider.nested li {
+    padding: 10px;
+}
 .big {
     margin-top: 30px;
     width: 100%;
