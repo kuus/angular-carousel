@@ -106,7 +106,7 @@
                         timestamp;
 
                     // add a wrapper div that will hide the overflow
-                    var carousel = iElement.wrap("<div id='carousel-" + carouselId +"' class='rn-carousel-container" + verticalClass +"'></div>"),
+                    var carousel = iElement.wrap('<div id="carousel-' + carouselId + '" class="rn-carousel-container"></div>'),
                         container = carousel.parent();
 
                     // if indicator or controls, setup the watch
@@ -118,17 +118,18 @@
                         scope.$watch('indicatorIndex', function(newValue) {
                             goToSlide(newValue, true);
                         });
+
                     }
 
                     // enable carousel indicator
                     if (angular.isDefined(iAttributes.rnCarouselIndicator)) {
-                        var indicator = $compile("<div id='carousel-" + carouselId +"-indicator' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-indicators class='rn-carousel-indicator'></div>")(scope);
+                        var indicator = $compile('<div id="carousel-' + carouselId + '-indicator" index="indicatorIndex" items="carouselIndicatorArray" rn-carousel-indicators class="rn-carousel-indicator"></div>')(scope);
                         container.append(indicator);
                     }
 
                     // enable carousel controls
                     if (angular.isDefined(iAttributes.rnCarouselControl)) {
-                        var controls = $compile("<div id='carousel-" + carouselId +"-controls' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-controls class='rn-carousel-controls'></div>")(scope);
+                        var controls = $compile('<div id="carousel-' + carouselId + '-controls" index="indicatorIndex" items="carouselIndicatorArray" rn-carousel-controls class="rn-carousel-controls"></div>')(scope);
                         container.append(controls);
                     }
 
