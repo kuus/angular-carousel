@@ -32,12 +32,11 @@
                     percentageNextSlideToShow = 0,
                     isVertical = false,
                     verticalClass = '',
-                    dirAttribute = tAttributes.rnCarousel,
                     dirProperty = 'width',
                     dirAxis = 'x',
                     tElementSlides = tElement.children();
                 // change direction if attribute is set
-                if(dirAttribute === 'vertical') {
+                if(tAttributes.rnCarousel === 'vertical') {
                     isVertical = true;
                     dirProperty = 'height';
                     dirAxis = 'y';
