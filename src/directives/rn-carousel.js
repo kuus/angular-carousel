@@ -32,11 +32,12 @@
                     percentageNextSlideToShow = 0,
                     isVertical = false,
                     verticalClass = '',
+                    dirAttribute = tAttributes.rnCarousel,
                     dirProperty = 'width',
                     dirAxis = 'x',
                     tElementSlides = tElement.children();
                 // change direction if attribute is set
-                if(tAttributes.rnCarousel === 'vertical') {
+                if(dirAttribute === 'vertical') {
                     isVertical = true;
                     dirProperty = 'height';
                     dirAxis = 'y';
@@ -106,7 +107,7 @@
                         timestamp;
 
                     // add a wrapper div that will hide the overflow
-                    var carousel = iElement.wrap('<div id="carousel-' + carouselId + '" class="rn-carousel-container"></div>'),
+                    var carousel = iElement.wrap("<div id='carousel-" + carouselId +"' class='rn-carousel-container" + verticalClass +"'></div>"),
                         container = carousel.parent();
 
                     // if indicator or controls, setup the watch
@@ -118,18 +119,17 @@
                         scope.$watch('indicatorIndex', function(newValue) {
                             goToSlide(newValue, true);
                         });
-
                     }
 
                     // enable carousel indicator
                     if (angular.isDefined(iAttributes.rnCarouselIndicator)) {
-                        var indicator = $compile('<div id="carousel-' + carouselId + '-indicator" index="indicatorIndex" items="carouselIndicatorArray" rn-carousel-indicators class="rn-carousel-indicator"></div>')(scope);
+                        var indicator = $compile("<div id='carousel-" + carouselId +"-indicator' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-indicators class='rn-carousel-indicator'></div>")(scope);
                         container.append(indicator);
                     }
 
                     // enable carousel controls
                     if (angular.isDefined(iAttributes.rnCarouselControl)) {
-                        var controls = $compile('<div id="carousel-' + carouselId + '-controls" index="indicatorIndex" items="carouselIndicatorArray" rn-carousel-controls class="rn-carousel-controls"></div>')(scope);
+                        var controls = $compile("<div id='carousel-" + carouselId +"-controls' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-controls class='rn-carousel-controls'></div>")(scope);
                         container.append(controls);
                     }
 
@@ -351,9 +351,10 @@
                         //console.log('swipeStart', coords, event);
 
                         // stop events from propagating to handle nested carousels
-                        if(event) {
-                            event.stopPropagation();
-                        }
+                        // this doesn't allow clicks inside carousel..tempfix, probably breaks something else
+                        // if(event) {
+                        //     event.stopPropagation();
+                        // }
 
                         $document.bind('mouseup', documentMouseUpEvent);
                         pressed = true;
@@ -395,9 +396,10 @@
                         }
 
                         // stop events from propagating to handle nested carousels
-                        if(event) {
-                            event.stopPropagation();
-                        }
+                        // this doesn't allow clicks inside carousel..tempfix, probably breaks something else
+                        // if(event) {
+                        //     event.stopPropagation();
+                        // }
 
                         $document.unbind('mouseup', documentMouseUpEvent);
                         pressed = false;
@@ -406,18 +408,22 @@
                         // check the mode
                         if(showNextSlideMode) {
                             swipeCoordsEnd = coords;
-                            console.log('swipeCoordsEnd', swipeCoordsEnd)
+                            // console.log('swipeCoordsEnd', swipeCoordsEnd)
                             // determine the diretion of the swipe
                             if(angular.isObject(swipeCoordsStart) && angular.isObject(swipeCoordsEnd)) {
                                 swipedDelta = (swipeCoordsStart[dirAxis] > swipeCoordsEnd[dirAxis]) ? 1 : 0;
                             } else {
                                 swipedDelta = 0;
                             }
-                            var currentOffset = (scope.carouselIndex * containerSize) - getIncrementalOffset(swipedDelta);
+                            if(swipeCoordsStart[dirAxis] === swipeCoordsEnd[dirAxis]) {
+                                return;
+                            } else {
+                                var currentOffset = (scope.carouselIndex * containerSize) - getIncrementalOffset(swipedDelta);
+                            }
                         } else {
                             var currentOffset = scope.carouselIndex * containerSize;
                         }
-                        console.log('swipedDelta', swipedDelta, 'scope.carouselIndex', scope.carouselIndex, 'currentOffset', currentOffset)
+                        // console.log('swipedDelta', swipedDelta, 'scope.carouselIndex', scope.carouselIndex, 'currentOffset', currentOffset)
 
                         destination = offset;
                         var minMove = getAbsMoveTreshold(),
@@ -435,7 +441,7 @@
 
                         destination = (moveOffset + scope.carouselIndex) * containerSize;
                         amplitude = destination - offset;
-                        console.log('destination', destination, 'amplitude', amplitude)
+                        // console.log('destination', destination, 'amplitude', amplitude)
                         timestamp = Date.now();
                         if (forceAnimation) {
                             amplitude = offset - currentOffset;
