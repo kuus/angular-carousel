@@ -487,6 +487,10 @@
 
                     // Detect support of translate3d
                     function detect3dSupport(){
+                        // use modernizr if exists
+                        if(angular.isDefined($window.Modernizr) && angular.isDefined($window.Modernizr.csstransforms3d)) {
+                            return $window.Modernizr.csstransforms3d
+                        }
                         var el = document.createElement('p'),
                         has3d,
                         transforms = {
