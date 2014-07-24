@@ -11,9 +11,9 @@
             // in container % how much we need to drag to trigger the slide change
             moveTreshold = 0.05,
             // in absolute pixels, at which distance the slide stick to the edge on release
-            rubberTreshold = 3,
-            // use raf.js, a requestAnimationFrame polyfill, to make this work on IE9
-            requestAnimationFrame = $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame;
+            rubberTreshold = 3;
+
+        var requestAnimationFrame = $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame;
 
         return {
             restrict: 'A',
@@ -31,17 +31,15 @@
                     showNextSlideMode = false,
                     percentageNextSlideToShow = 0,
                     isVertical = false,
-                    verticalClass = '',
-                    dirAttribute = tAttributes.rnCarousel,
                     dirProperty = 'width',
                     dirAxis = 'x',
                     tElementSlides = tElement.children();
                 // change direction if attribute is set
-                if(dirAttribute === 'vertical') {
+                if(tElement.rnCarousel === 'vertical') {
                     isVertical = true;
                     dirProperty = 'height';
                     dirAxis = 'y';
-                    verticalClass = ' rn-carousel-vertical';
+                    tElement.addClass('rn-carousel-vertical');
                 }
                 // showNextSlideMode
                 if(angular.isDefined(showNextAttribute)) {
@@ -85,7 +83,7 @@
                     return true;
                 });
 
-                return function(scope, iElement, iAttributes) {
+                return function(scope, iElement, iAttributes, containerCtrl) {
 
                     carouselId++;
 
@@ -101,13 +99,11 @@
                         destination,
                         slidesCount = 0,
                         swipeMoved = false,
-                        swipeCoordsEnd = { x: 0, y: 0 },
-                        swipeCoordsStart = { x: 0, y: 0 },
                         // javascript based animation easing
                         timestamp;
 
                     // add a wrapper div that will hide the overflow
-                    var carousel = iElement.wrap("<div id='carousel-" + carouselId +"' class='rn-carousel-container" + verticalClass +"'></div>"),
+                    var carousel = iElement.wrap('<div id="carousel-' + carouselId + '" class="rn-carousel-container"></div>'),
                         container = carousel.parent();
 
                     // if indicator or controls, setup the watch
@@ -119,17 +115,18 @@
                         scope.$watch('indicatorIndex', function(newValue) {
                             goToSlide(newValue, true);
                         });
+
                     }
 
                     // enable carousel indicator
                     if (angular.isDefined(iAttributes.rnCarouselIndicator)) {
-                        var indicator = $compile("<div id='carousel-" + carouselId +"-indicator' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-indicators class='rn-carousel-indicator'></div>")(scope);
+                        var indicator = $compile('<div id="carousel-' + carouselId + '-indicator" index="indicatorIndex" items="carouselIndicatorArray" rn-carousel-indicators class="rn-carousel-indicator"></div>')(scope);
                         container.append(indicator);
                     }
 
                     // enable carousel controls
                     if (angular.isDefined(iAttributes.rnCarouselControl)) {
-                        var controls = $compile("<div id='carousel-" + carouselId +"-controls' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-controls class='rn-carousel-controls'></div>")(scope);
+                        var controls = $compile('<div id="carousel-' + carouselId + '-controls" index="indicatorIndex" items="carouselIndicatorArray" rn-carousel-controls class="rn-carousel-controls"></div>')(scope);
                         container.append(controls);
                     }
 
@@ -256,6 +253,8 @@
                                 } else {
                                     scroll(destination - delta);
                                 }
+                                /* We are using raf.js, a requestAnimationFrame polyfill, so
+                                this will work on IE9 */
                                 requestAnimationFrame(autoScroll);
                             } else {
                                 goToSlide(destination / containerSize);
@@ -316,17 +315,10 @@
                         return moveTreshold * containerSize;
                     }
 
-                    function getIncrementalOffset(delta) {
-                        if(delta > 0) {
-                            return containerOffset * (scope.carouselIndex + 1);
-                        } else {
-                            return containerOffset * (scope.carouselIndex - 1);
-                        }
-                    }
-
                     function documentMouseUpEvent(event) {
                         // in case we click outside the carousel, trigger a fake swipeEnd
-                        swipeMoved = true;
+                        // this doesn't allow clicks inside carousel..tempfix, probably breaks something else
+                        // swipeMoved = true;
                         swipeEnd({
                             x: event.clientX,
                             y: event.clientY
@@ -345,10 +337,7 @@
                     }
 
                     function swipeStart(coords, event) {
-                        if(showNextSlideMode) {
-                            swipeCoordsStart = coords;
-                        }
-                        //console.log('swipeStart', coords, event);
+                        // console.log('swipeStart', coords, event);
 
                         // stop events from propagating to handle nested carousels
                         // this doesn't allow clicks inside carousel..tempfix, probably breaks something else
@@ -380,6 +369,9 @@
 
                                 swipeMoved = true;
                                 startAxis = axis;
+
+                                /* We are using raf.js, a requestAnimationFrame polyfill, so
+                                this will work on IE9 */
                                 requestAnimationFrame(function() {
                                     scroll(capPosition(offset + delta));
                                 });
@@ -388,45 +380,35 @@
                         return false;
                     }
 
+                    function getIncrementalOffset(delta) {
+                        if(delta > 0) {
+                            return containerOffset * (scope.carouselIndex + 1);
+                        } else {
+                            return containerOffset * (scope.carouselIndex - 1);
+                        }
+                    }
+
                     function swipeEnd(coords, event, forceAnimation) {
-                        var swipedDelta;
+                        // console.log('swipeEnd', 'event', event, 'scope.carouselIndex', scope.carouselIndex, 'swipeMoved', swipeMoved);
+
                         // Prevent clicks on buttons inside slider to trigger "swipeEnd" event on touchend/mouseup
                         if(event && !swipeMoved) {
                             return;
                         }
 
                         // stop events from propagating to handle nested carousels
-                        // this doesn't allow clicks inside carousel..tempfix, probably breaks something else
-                        // if(event) {
-                        //     event.stopPropagation();
-                        // }
+                        if(event) {
+                            event.stopPropagation();
+                        }
 
                         $document.unbind('mouseup', documentMouseUpEvent);
                         pressed = false;
                         swipeMoved = false;
 
-                        // check the mode
-                        if(showNextSlideMode) {
-                            swipeCoordsEnd = coords;
-                            // console.log('swipeCoordsEnd', swipeCoordsEnd)
-                            // determine the diretion of the swipe
-                            if(angular.isObject(swipeCoordsStart) && angular.isObject(swipeCoordsEnd)) {
-                                swipedDelta = (swipeCoordsStart[dirAxis] > swipeCoordsEnd[dirAxis]) ? 1 : 0;
-                            } else {
-                                swipedDelta = 0;
-                            }
-                            if(swipeCoordsStart[dirAxis] === swipeCoordsEnd[dirAxis]) {
-                                return;
-                            } else {
-                                var currentOffset = (scope.carouselIndex * containerSize) - getIncrementalOffset(swipedDelta);
-                            }
-                        } else {
-                            var currentOffset = scope.carouselIndex * containerSize;
-                        }
-                        // console.log('swipedDelta', swipedDelta, 'scope.carouselIndex', scope.carouselIndex, 'currentOffset', currentOffset)
-
                         destination = offset;
+
                         var minMove = getAbsMoveTreshold(),
+                            currentOffset = (scope.carouselIndex * containerSize),
                             absMove = currentOffset - destination,
                             slidesMove = -Math[absMove>=0?'ceil':'floor'](absMove / containerSize),
                             shouldMove = Math.abs(absMove) > minMove;
@@ -441,11 +423,12 @@
 
                         destination = (moveOffset + scope.carouselIndex) * containerSize;
                         amplitude = destination - offset;
-                        // console.log('destination', destination, 'amplitude', amplitude)
                         timestamp = Date.now();
                         if (forceAnimation) {
                             amplitude = offset - currentOffset;
                         }
+                        /* We are using raf.js, a requestAnimationFrame polyfill, so
+                        this will work on IE9 */
                         requestAnimationFrame(autoScroll);
 
                         return false;
@@ -485,11 +468,11 @@
                         return true;
                     });
 
-                    // Detect support of translate3d
+                    //Detect support of translate3d
                     function detect3dSupport(){
                         // use modernizr if exists
                         if(angular.isDefined($window.Modernizr) && angular.isDefined($window.Modernizr.csstransforms3d)) {
-                            return $window.Modernizr.csstransforms3d
+                            return $window.Modernizr.csstransforms3d;
                         }
                         var el = document.createElement('p'),
                         has3d,
