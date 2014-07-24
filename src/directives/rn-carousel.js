@@ -3,7 +3,7 @@
 
     angular.module('angular-carousel')
 
-    .directive('rnCarousel', ['swipe', '$window', '$document', '$parse', '$compile', '$rootScope', function(swipe, $window, $document, $parse, $compile, $rootScope) {
+    .directive('rnCarousel', ['$swipe', '$window', '$document', '$parse', '$compile', '$rootScope', function($swipe, $window, $document, $parse, $compile, $rootScope) {
         // internal ids to allow multiple instances
         var carouselId = 0,
             // used to compute the sliding speed
@@ -11,9 +11,9 @@
             // in container % how much we need to drag to trigger the slide change
             moveTreshold = 0.05,
             // in absolute pixels, at which distance the slide stick to the edge on release
-            rubberTreshold = 3;
-
-        var requestAnimationFrame = $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame;
+            rubberTreshold = 3,
+            // use raf.js, a requestAnimationFrame polyfill, to make this work on IE9
+            requestAnimationFrame = $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame;
 
         return {
             restrict: 'A',
@@ -31,6 +31,7 @@
                     showNextSlideMode = false,
                     percentageNextSlideToShow = 0,
                     isVertical = false,
+                    verticalClass = '',
                     dirProperty = 'width',
                     dirAxis = 'x',
                     tElementSlides = tElement.children();
@@ -39,7 +40,7 @@
                     isVertical = true;
                     dirProperty = 'height';
                     dirAxis = 'y';
-                    tElement.addClass('rn-carousel-vertical');
+                    verticalClass = ' rn-carousel-vertical';
                 }
                 // showNextSlideMode
                 if(angular.isDefined(showNextAttribute)) {
@@ -99,11 +100,13 @@
                         destination,
                         slidesCount = 0,
                         swipeMoved = false,
+                        swipeCoordsEnd = { x: 0, y: 0 },
+                        swipeCoordsStart = { x: 0, y: 0 },
                         // javascript based animation easing
                         timestamp;
 
                     // add a wrapper div that will hide the overflow
-                    var carousel = iElement.wrap('<div id="carousel-' + carouselId + '" class="rn-carousel-container"></div>'),
+                    var carousel = iElement.wrap('<div id="carousel-' + carouselId + '" class="rn-carousel-container' + verticalClass + '"></div>'),
                         container = carousel.parent();
 
                     // if indicator or controls, setup the watch
@@ -338,6 +341,9 @@
 
                     function swipeStart(coords, event) {
                         // console.log('swipeStart', coords, event);
+                        if(showNextSlideMode) {
+                            swipeCoordsStart = coords;
+                        }
 
                         // stop events from propagating to handle nested carousels
                         // this doesn't allow clicks inside carousel..tempfix, probably breaks something else
@@ -401,6 +407,27 @@
                             event.stopPropagation();
                         }
 
+                        // check the mode
+                        if(showNextSlideMode) {
+                            swipeCoordsEnd = coords;
+                            // console.log('swipeCoordsEnd', swipeCoordsEnd)
+                            // determine the diretion of the swipe
+                            if(angular.isObject(swipeCoordsStart) && angular.isObject(swipeCoordsEnd)) {
+                                var swipedDelta = (swipeCoordsStart[dirAxis] > swipeCoordsEnd[dirAxis]) ? 1 : 0;
+                            } else {
+                                var swipedDelta = 0;
+                            }
+                            var currentOffset = (scope.carouselIndex * containerSize) - getIncrementalOffset(swipedDelta);
+                            // if(swipeCoordsStart[dirAxis] === swipeCoordsEnd[dirAxis]) {
+                            //    return;
+                            // } else {
+                            //    var currentOffset = (scope.carouselIndex * containerSize) - getIncrementalOffset(swipedDelta);
+                            // }
+                        } else {
+                            var currentOffset = scope.carouselIndex * containerSizeToConsider;
+                        }
+                        // console.log('swipedDelta', swipedDelta, 'scope.carouselIndex', scope.carouselIndex, 'currentOffset', currentOffset)
+
                         $document.unbind('mouseup', documentMouseUpEvent);
                         pressed = false;
                         swipeMoved = false;
@@ -408,7 +435,7 @@
                         destination = offset;
 
                         var minMove = getAbsMoveTreshold(),
-                            currentOffset = (scope.carouselIndex * containerSize),
+                            // currentOffset = (scope.carouselIndex * containerSize),
                             absMove = currentOffset - destination,
                             slidesMove = -Math[absMove>=0?'ceil':'floor'](absMove / containerSize),
                             shouldMove = Math.abs(absMove) > minMove;
@@ -437,7 +464,7 @@
                     iAttributes.$observe('rnCarouselSwipe', function(newValue, oldValue) {
                         // only bind swipe when it's not switched off
                         if(newValue !== 'false' && newValue !== 'off') {
-                            swipe.bind(carousel, {
+                            $swipe.bind(carousel, {
                                 start: swipeStart,
                                 move: swipeMove,
                                 end: swipeEnd,
